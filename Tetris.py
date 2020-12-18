@@ -112,6 +112,8 @@ vmod=1
 k=0
 block_is_falling=False
 
+highest_figure=26
+
 score=0
 
 
@@ -179,6 +181,8 @@ def rotate():
 			resol=False
 		elif -i[1]+x_fi<0:
 			resol=False
+		elif i[0]+y_fi>=26:
+			resol=False
 		elif field[-i[1]+x_fi][i[0]+y_fi]!=0:
 			resol=False
 	if resol:
@@ -217,7 +221,7 @@ def drop():
 #Уничтожение ряда
 delete_timer=-1
 def delete_line():
-	global field,delete_timer,score
+	global field,delete_timer,score,highest_figure
 	line_count=0
 	for i in range(5,25):
 		block_counter=0
@@ -226,15 +230,16 @@ def delete_line():
 				block_counter+=1
 		if block_counter>=10:
 			light=255
-			for anim in range(200//(bot_trigger+1)):
+			for anim in range(200):
 				pg.draw.rect(sc,(light,light,light),(0,(i-5)*block_size,width,block_size))
 				pg.display.update()
-				pg.time.delay(not bot_trigger+1)
-				light-=0.5+bot_trigger*0.5
+				pg.time.delay(int(not bot_trigger)+1)
+				light-=0.5
 			for j in range(10):
   				colomn=field[j]
   				field[j]=[0]+colomn[:i]+colomn[i+1:]
 			line_count+=1
+			highest_figure-=1
 	score+=line_scores[line_count]
 	delete_timer=-1
 
@@ -275,6 +280,7 @@ def game_over():
 	vmod=1
 	bot_trigger=False
 	block_is_falling=False
+	highest_figure=26
 	field=[[0 for j in range(25)]+[1] for i in range(10)]
 	sack=[]
 	next_block=''
@@ -334,7 +340,6 @@ while True:
 				if e.button==1:
 					if e.pos[0]>=0.18*height and e.pos[0]<=0.32*height and e.pos[1]>=0.22*height and e.pos[1]<=0.28*height:
 						menu=False
-						write_data()
 					elif e.pos[0]>=0.18*height and e.pos[0]<=0.32*height and e.pos[1]>=0.32*height and e.pos[1]<=0.38*height:
 						options=not options
 			elif e.type==pg.KEYDOWN:
@@ -514,6 +519,12 @@ while True:
 					key_left()
 				elif e.key==pg.K_RIGHT:
 					key_right()
+				elif e.key==44:		# <		 !44 - ЗАМЕНИТЬ!
+					key_left()
+					key_left()
+				elif e.key==46:		# > 	 !46 - ЗАМЕНИТЬ!
+					key_right()
+					key_right()
 				elif e.key==pg.K_x or e.key==pg.K_UP:
 					rotate()
 				elif e.key==pg.K_z:
@@ -624,6 +635,7 @@ while True:
 				break
 		if not block_is_falling:
 			for i in cu_block_form:
+				highest_figure=min(highest_figure,y_fi+i[1])
 				field[x_fi+i[0]][y_fi+i[1]]=block_colors[cu_block]
 			delete_timer=2
 			v+=0.0005*block_size
@@ -641,7 +653,7 @@ while True:
 
 
 		if bot_trigger:
-			if loc!=(rotation,x_fi):
+			if loc!=(rotation,x_fi) and highest_figure-y_fi<=3:
 				#Коэфиценты
 				KELL=60
 				KH=(0.5,6)
@@ -763,6 +775,6 @@ while True:
 	if menu:
 		clock.tick(20)
 	elif bot_trigger:
-		clock.tick(80)
+		clock.tick(90)
 	else:
 		clock.tick(60)
